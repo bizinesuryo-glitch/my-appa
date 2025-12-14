@@ -1,0 +1,734 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MBTI風 簡易診断アプリ</title>
+  <style>
+    :root{
+      --bg1:#0b1220;
+      --bg2:#0a0f1a;
+      --card:rgba(255,255,255,.08);
+      --card2:rgba(255,255,255,.06);
+      --line:rgba(255,255,255,.14);
+      --txt:rgba(255,255,255,.92);
+      --muted:rgba(255,255,255,.68);
+      --accent:#7c5cff;
+      --accent2:#33d6ff;
+      --good:#2ef2b3;
+      --warn:#ffcf5a;
+      --shadow: 0 18px 60px rgba(0,0,0,.45);
+      --radius: 18px;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      color:var(--txt);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", sans-serif;
+      background:
+        radial-gradient(900px 500px at 15% 10%, rgba(124,92,255,.22), transparent 60%),
+        radial-gradient(700px 450px at 85% 20%, rgba(51,214,255,.18), transparent 60%),
+        radial-gradient(900px 600px at 40% 90%, rgba(46,242,179,.12), transparent 62%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+      overflow-x:hidden;
+    }
+
+    .wrap{
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 28px 18px 60px;
+    }
+
+    .hero{
+      display:flex;
+      gap:16px;
+      align-items:flex-start;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      margin-bottom:18px;
+    }
+
+    .title{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      max-width: 680px;
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      width:fit-content;
+      padding:8px 12px;
+      border:1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.05));
+      border-radius:999px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.18);
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing:.02em;
+    }
+
+    .dot{
+      width:10px;height:10px;border-radius:50%;
+      background: conic-gradient(from 90deg, var(--accent), var(--accent2), var(--good), var(--accent));
+      box-shadow: 0 0 18px rgba(124,92,255,.55);
+    }
+
+    h1{
+      margin:0;
+      font-size: clamp(24px, 3.2vw, 38px);
+      line-height: 1.15;
+      letter-spacing:.02em;
+    }
+
+    .sub{
+      margin:0;
+      color:var(--muted);
+      font-size: 14px;
+      line-height:1.6;
+    }
+
+    .panel{
+      border:1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.05));
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      position:relative;
+    }
+
+    .panel::before{
+      content:"";
+      position:absolute;
+      inset:-2px;
+      background: radial-gradient(800px 300px at 15% 0%, rgba(124,92,255,.25), transparent 55%),
+                  radial-gradient(700px 280px at 85% 0%, rgba(51,214,255,.18), transparent 60%);
+      pointer-events:none;
+      opacity:.9;
+    }
+
+    .panel-inner{
+      position:relative;
+      padding: 18px;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 14px;
+    }
+    @media (max-width: 900px){
+      .grid{grid-template-columns:1fr}
+    }
+
+    .card{
+      border:1px solid var(--line);
+      background: rgba(0,0,0,.18);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 12px 38px rgba(0,0,0,.25);
+      backdrop-filter: blur(10px);
+    }
+
+    .btns{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    button{
+      appearance:none;
+      border:none;
+      cursor:pointer;
+      color: var(--txt);
+      font-weight: 700;
+      letter-spacing:.02em;
+      border-radius: 999px;
+      padding: 12px 14px;
+      background: rgba(255,255,255,.09);
+      border: 1px solid var(--line);
+      transition: transform .12s ease, filter .12s ease, background .12s ease, border-color .12s ease;
+      user-select:none;
+    }
+    button:hover{ transform: translateY(-1px); filter: brightness(1.05); }
+    button:active{ transform: translateY(0px) scale(.99); }
+    button:disabled{
+      opacity:.45; cursor:not-allowed; transform:none;
+    }
+
+    .primary{
+      background: linear-gradient(135deg, rgba(124,92,255,.95), rgba(51,214,255,.75));
+      border-color: rgba(255,255,255,.22);
+      box-shadow: 0 16px 40px rgba(124,92,255,.18);
+    }
+    .ghost{
+      background: rgba(255,255,255,.06);
+    }
+
+    .progress-wrap{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      width: 100%;
+      margin-top:10px;
+    }
+    .progress{
+      flex:1;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.14);
+      overflow:hidden;
+    }
+    .bar{
+      height:100%;
+      width:0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2), var(--good));
+      border-radius:999px;
+      transition: width .35s ease;
+      box-shadow: 0 0 18px rgba(51,214,255,.25);
+    }
+    .ptext{
+      min-width: 96px;
+      text-align:right;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .qhead{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:14px;
+      margin-bottom: 10px;
+    }
+
+    .qno{
+      font-size: 12px;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.06);
+      padding: 6px 10px;
+      border-radius: 999px;
+      white-space:nowrap;
+    }
+
+    .qtext{
+      margin:0;
+      font-size: 18px;
+      line-height:1.5;
+      letter-spacing:.01em;
+    }
+
+    .choices{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    @media (max-width: 560px){
+      .choices{ grid-template-columns: 1fr; }
+    }
+
+    .choice{
+      text-align:left;
+      border-radius: 16px;
+      padding: 14px 14px;
+      background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.05));
+      border: 1px solid rgba(255,255,255,.16);
+      box-shadow: 0 14px 34px rgba(0,0,0,.22);
+      position:relative;
+      overflow:hidden;
+    }
+    .choice::after{
+      content:"";
+      position:absolute;
+      inset:-2px;
+      background: radial-gradient(500px 200px at 30% 0%, rgba(124,92,255,.23), transparent 60%),
+                  radial-gradient(520px 220px at 80% 0%, rgba(51,214,255,.16), transparent 62%);
+      opacity:.7;
+      pointer-events:none;
+    }
+    .choice > span{
+      position:relative;
+      display:block;
+      color: var(--txt);
+      font-weight: 800;
+      font-size: 14px;
+      line-height:1.35;
+    }
+    .choice small{
+      position:relative;
+      display:block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .meta{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height:1.7;
+    }
+    .pill{
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.06);
+      padding: 7px 10px;
+      border-radius: 999px;
+    }
+
+    .result{
+      display:none;
+      animation: pop .35s ease both;
+    }
+    @keyframes pop{
+      from{ transform: translateY(8px); opacity:0; }
+      to{ transform: translateY(0); opacity:1; }
+    }
+
+    .type{
+      font-size: 44px;
+      letter-spacing:.08em;
+      margin: 0;
+      line-height:1.05;
+      text-shadow: 0 14px 50px rgba(124,92,255,.28);
+    }
+    .label{
+      margin: 8px 0 0;
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 700;
+      letter-spacing:.03em;
+    }
+
+    .desc{
+      margin: 12px 0 0;
+      color: rgba(255,255,255,.83);
+      line-height:1.8;
+      font-size: 14px;
+    }
+
+    .scoregrid{
+      margin-top: 14px;
+      display:grid;
+      gap: 10px;
+    }
+
+    .meter{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.18);
+      border-radius: 14px;
+      padding: 10px 10px;
+    }
+    .mrow{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .mbar{
+      height: 10px;
+      border-radius:999px;
+      background: rgba(255,255,255,.08);
+      overflow:hidden;
+      border: 1px solid rgba(255,255,255,.12);
+    }
+    .mfill{
+      height:100%;
+      width:50%;
+      background: linear-gradient(90deg, rgba(255,255,255,.12), rgba(255,255,255,.3));
+      transition: width .35s ease;
+    }
+
+    a.linkbtn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      text-decoration:none;
+      color: var(--txt);
+      font-weight: 800;
+      border-radius: 999px;
+      padding: 12px 14px;
+      border: 1px solid rgba(255,255,255,.2);
+      background: rgba(255,255,255,.08);
+      transition: transform .12s ease, filter .12s ease;
+      user-select:none;
+      width:100%;
+      text-align:center;
+    }
+    a.linkbtn:hover{ transform: translateY(-1px); filter:brightness(1.05); }
+    a.linkbtn.primary{ background: linear-gradient(135deg, rgba(124,92,255,.95), rgba(51,214,255,.75)); }
+
+    .note{
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .footer{
+      margin-top: 18px;
+      color: rgba(255,255,255,.55);
+      font-size: 12px;
+      line-height: 1.8;
+      text-align:center;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <div class="title">
+        <div class="badge"><span class="dot"></span> MBTI風・簡易診断（8問）</div>
+        <h1>あなたのタイプをサクッと診断</h1>
+        <p class="sub">
+          各質問で直感に近い方を選ぶだけ。結果は<strong>MBTIそのものではなく「MBTI風の傾向」</strong>として表示します。
+        </p>
+      </div>
+      <div class="btns">
+        <button class="ghost" id="btnReset" type="button">リセット</button>
+        <button class="primary" id="btnStart" type="button">診断スタート</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-inner">
+        <div class="grid">
+          <div class="card" id="quizCard">
+            <div class="qhead">
+              <div>
+                <div class="qno" id="qNo">準備中</div>
+                <p class="qtext" id="qText">「診断スタート」を押してください。</p>
+              </div>
+            </div>
+
+            <div class="choices" id="choices" aria-live="polite">
+              <button class="choice" type="button" id="choiceA" disabled>
+                <span>—</span>
+                <small>—</small>
+              </button>
+              <button class="choice" type="button" id="choiceB" disabled>
+                <span>—</span>
+                <small>—</small>
+              </button>
+            </div>
+
+            <div class="progress-wrap" aria-label="進捗">
+              <div class="progress"><div class="bar" id="bar"></div></div>
+              <div class="ptext" id="pText">0 / 0</div>
+            </div>
+
+            <div class="meta">
+              <div class="pill" id="hintPill">ヒント：迷ったら「普段の自分」で選ぶ</div>
+              <div class="pill" id="undoPill">⌘/Ctrl + Z で1つ戻れる</div>
+            </div>
+          </div>
+
+          <div class="card result" id="resultCard">
+            <p class="type" id="typeText">----</p>
+            <p class="label" id="typeLabel">結果</p>
+            <p class="desc" id="typeDesc"></p>
+
+            <div class="scoregrid" id="meters"></div>
+
+            <div style="margin-top:14px; display:grid; gap:10px;">
+              <a class="linkbtn primary" id="learnLink" href="#" target="_blank" rel="noopener">さらに運勢（？）を上げるページへ</a>
+              <a class="linkbtn" id="shareLink" href="#" target="_blank" rel="noopener">結果をシェア（X）</a>
+            </div>
+
+            <div class="note" id="note">
+              ※この診断は娯楽・自己理解の補助としてお楽しみください。公式MBTIの代替ではありません。
+            </div>
+          </div>
+        </div>
+
+        <div class="footer">
+          Made for copy-paste. ローカルでも動きます（通信なし）。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const QUESTIONS = [
+      { axis:'EI',
+        text:'初対面の集まり。あなたはどちらになりがち？',
+        a:{ letter:'E', title:'話しかけに行く', sub:'雑談で場の空気をつかむ' },
+        b:{ letter:'I', title:'様子を見てから動く', sub:'必要なら少人数で話す' }
+      },
+      { axis:'EI',
+        text:'疲れたとき、回復しやすいのは？',
+        a:{ letter:'E', title:'人に会う / 話す', sub:'気分転換で元気が戻る' },
+        b:{ letter:'I', title:'一人の時間', sub:'静かな環境で整える' }
+      },
+      { axis:'SN',
+        text:'新しい企画を考えるとき、得意なのは？',
+        a:{ letter:'S', title:'現実的に詰める', sub:'今あるデータ・実績を基準に' },
+        b:{ letter:'N', title:'可能性を広げる', sub:'アイデアを連想で広げる' }
+      },
+      { axis:'SN',
+        text:'会話で「わかりやすい」と感じるのは？',
+        a:{ letter:'S', title:'具体例が多い', sub:'手順・数字・事実がある' },
+        b:{ letter:'N', title:'本質や意図が語られる', sub:'背景や意味が見える' }
+      },
+      { axis:'TF',
+        text:'意見が割れたとき、優先しやすいのは？',
+        a:{ letter:'T', title:'筋の通り方', sub:'公平性・合理性を重視' },
+        b:{ letter:'F', title:'気持ちへの配慮', sub:'納得感・共感を重視' }
+      },
+      { axis:'TF',
+        text:'フィードバックする時のスタイルは？',
+        a:{ letter:'T', title:'率直に改善点を伝える', sub:'課題を明確にしたい' },
+        b:{ letter:'F', title:'相手の気持ちを守る', sub:'言い方に気を配る' }
+      },
+      { axis:'JP',
+        text:'旅行の計画。あなたはどっち？',
+        a:{ letter:'J', title:'先に決めて安心', sub:'予定を固めて動く' },
+        b:{ letter:'P', title:'行き当たりばったりもOK', sub:'現地のノリで変える' }
+      },
+      { axis:'JP',
+        text:'締切が近い時、動き方は？',
+        a:{ letter:'J', title:'早めに終わらせたい', sub:'前倒しで余裕を確保' },
+        b:{ letter:'P', title:'ギリギリで集中できる', sub:'締切前に一気に仕上げる' }
+      }
+    ];
+
+    const TYPE_DESC = {
+      ISTJ: '堅実で責任感が強いタイプ。ルールや手順を大切にし、着実に成果を積み上げます。',
+      ISFJ: '思いやりがあり献身的。周囲の安心感を守り、裏方で支えることが得意です。',
+      INFJ: '理想と洞察を両立。相手の本音を読み取り、長期視点で道筋を描きます。',
+      INTJ: '戦略的で独立心が強い。仕組み化・最適化で大きな成果を狙います。',
+      ISTP: '冷静で実践的。トラブル対応や改善が得意で、まず手を動かして学びます。',
+      ISFP: '感性が豊かで柔軟。自分らしさを大切にし、心地よい選択を重視します。',
+      INFP: '価値観に忠実。理想や信念を大切にし、深い共感で人を支えます。',
+      INTP: '探究心が強い分析家。概念を整理し、論理で世界を理解しようとします。',
+      ESTP: '行動力と適応力が高い。チャンスを掴むのが速く、場を動かします。',
+      ESFP: '明るく社交的。場を盛り上げ、人との体験を楽しみます。',
+      ENFP: 'アイデア豊富なムードメーカー。可能性を広げ、人を巻き込みます。',
+      ENTP: '発想と議論が得意。新しい切り口で突破口をつくります。',
+      ESTJ: 'リーダーシップが強い。段取りと実行でチームを前に進めます。',
+      ESFJ: '協調性が高い世話役。周囲を観察し、みんなが心地よい状態を作ります。',
+      ENFJ: '人を導く支援者。相手の成長を後押しし、熱量で場をまとめます。',
+      ENTJ: '目標志向の指揮官。意思決定が速く、成果に向けて推進します。'
+    };
+
+    // ここをあなたのURLに差し替え
+    const FORTUNE_URL_DEFAULT = "https://example.com/fortune";
+
+    const state = {
+      started: false,
+      index: 0,
+      counts: { E:0, I:0, S:0, N:0, T:0, F:0, J:0, P:0 },
+      history: []
+    };
+
+    const btnStart = document.getElementById('btnStart');
+    const btnReset = document.getElementById('btnReset');
+    const qNo = document.getElementById('qNo');
+    const qText = document.getElementById('qText');
+    const choiceA = document.getElementById('choiceA');
+    const choiceB = document.getElementById('choiceB');
+    const bar = document.getElementById('bar');
+    const pText = document.getElementById('pText');
+
+    const resultCard = document.getElementById('resultCard');
+    const typeText = document.getElementById('typeText');
+    const typeLabel = document.getElementById('typeLabel');
+    const typeDesc = document.getElementById('typeDesc');
+    const meters = document.getElementById('meters');
+    const learnLink = document.getElementById('learnLink');
+    const shareLink = document.getElementById('shareLink');
+
+    const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+    const percent = (a, b) => {
+      const t = a + b;
+      if (t === 0) return 50;
+      return Math.round((a / t) * 100);
+    };
+
+    function resetAll(){
+      state.started = false;
+      state.index = 0;
+      state.history = [];
+      state.counts = { E:0, I:0, S:0, N:0, T:0, F:0, J:0, P:0 };
+
+      qNo.textContent = "準備中";
+      qText.textContent = "「診断スタート」を押してください。";
+      setChoiceButton(choiceA, "—", "—", true);
+      setChoiceButton(choiceB, "—", "—", true);
+      updateProgress();
+
+      hideResult();
+      btnStart.textContent = "診断スタート";
+      btnStart.disabled = false;
+    }
+
+    function setChoiceButton(btn, title, sub, disabled=false){
+      btn.querySelector('span').textContent = title;
+      btn.querySelector('small').textContent = sub;
+      btn.disabled = disabled;
+    }
+
+    function updateProgress(){
+      const total = QUESTIONS.length;
+      const done = clamp(state.index, 0, total);
+      const w = total === 0 ? 0 : Math.round((done / total) * 100);
+      bar.style.width = w + "%";
+      pText.textContent = `${done} / ${total}`;
+    }
+
+    function renderQuestion(){
+      const total = QUESTIONS.length;
+
+      if (state.index >= total){
+        showResult();
+        return;
+      }
+
+      const q = QUESTIONS[state.index];
+      qNo.textContent = `Q${state.index + 1} / ${total}`;
+      qText.textContent = q.text;
+
+      setChoiceButton(choiceA, q.a.title, q.a.sub, false);
+      setChoiceButton(choiceB, q.b.title, q.b.sub, false);
+
+      choiceA.setAttribute('aria-label', `選択A: ${q.a.title}`);
+      choiceB.setAttribute('aria-label', `選択B: ${q.b.title}`);
+
+      updateProgress();
+      hideResult();
+    }
+
+    function pick(letter){
+      state.counts[letter] = (state.counts[letter] || 0) + 1;
+      state.history.push(letter);
+      state.index += 1;
+      renderQuestion();
+    }
+
+    function undo(){
+      if (!state.started) return;
+      if (state.history.length === 0) return;
+      const last = state.history.pop();
+      state.counts[last] = Math.max(0, (state.counts[last] || 0) - 1);
+      state.index = Math.max(0, state.index - 1);
+      renderQuestion();
+    }
+
+    function calcType(){
+      const c = state.counts;
+      const EI = (c.E >= c.I) ? 'E' : 'I';
+      const SN = (c.S >= c.N) ? 'S' : 'N';
+      const TF = (c.T >= c.F) ? 'T' : 'F';
+      const JP = (c.J >= c.P) ? 'J' : 'P';
+      return EI + SN + TF + JP;
+    }
+
+    function axisMeters(){
+      const c = state.counts;
+      return [
+        { left:'E', right:'I', leftLabel:'外向(E)', rightLabel:'内向(I)', leftVal:c.E, rightVal:c.I },
+        { left:'S', right:'N', leftLabel:'感覚(S)', rightLabel:'直観(N)', leftVal:c.S, rightVal:c.N },
+        { left:'T', right:'F', leftLabel:'思考(T)', rightLabel:'感情(F)', leftVal:c.T, rightVal:c.F },
+        { left:'J', right:'P', leftLabel:'判断(J)', rightLabel:'知覚(P)', leftVal:c.J, rightVal:c.P }
+      ];
+    }
+
+    function showResult(){
+      const t = calcType();
+      typeText.textContent = t;
+      typeLabel.textContent = "あなたのタイプ（MBTI風）";
+      typeDesc.textContent = TYPE_DESC[t] || "あなたの回答傾向から見たタイプです。";
+
+      meters.innerHTML = "";
+      axisMeters().forEach(m=>{
+        const leftPct = percent(m.leftVal, m.rightVal);
+        const box = document.createElement('div');
+        box.className = 'meter';
+        box.innerHTML = `
+          <div class="mrow">
+            <span>${m.leftLabel}</span>
+            <span>${leftPct}% : ${100-leftPct}%</span>
+            <span>${m.rightLabel}</span>
+          </div>
+          <div class="mbar"><div class="mfill" style="width:${leftPct}%"></div></div>
+        `;
+        meters.appendChild(box);
+      });
+
+      const fortuneUrl = new URL(FORTUNE_URL_DEFAULT, location.href);
+      fortuneUrl.searchParams.set("type", t);
+      learnLink.href = fortuneUrl.toString();
+
+      const shareText = `MBTI風の簡易診断結果：${t}！\n#MBTI風 #診断`;
+      const shareUrl = location.href;
+      const x = new URL("https://twitter.com/intent/tweet");
+      x.searchParams.set("text", shareText);
+      x.searchParams.set("url", shareUrl);
+      shareLink.href = x.toString();
+
+      resultCard.style.display = 'block';
+      resultCard.classList.add('result');
+
+      setChoiceButton(choiceA, choiceA.querySelector('span').textContent, choiceA.querySelector('small').textContent, true);
+      setChoiceButton(choiceB, choiceB.querySelector('span').textContent, choiceB.querySelector('small').textContent, true);
+
+      qNo.textContent = "完了";
+      qText.textContent = "診断おつかれさまでした！結果をチェックしてみてください。";
+
+      updateProgress();
+      btnStart.disabled = true;
+    }
+
+    function hideResult(){
+      resultCard.style.display = 'none';
+    }
+
+    btnStart.addEventListener('click', ()=>{
+      state.started = true;
+      state.index = 0;
+      state.history = [];
+      state.counts = { E:0, I:0, S:0, N:0, T:0, F:0, J:0, P:0 };
+      btnStart.textContent = "診断中…";
+      renderQuestion();
+    });
+
+    btnReset.addEventListener('click', resetAll);
+
+    choiceA.addEventListener('click', ()=>{
+      const q = QUESTIONS[state.index];
+      if (!q) return;
+      pick(q.a.letter);
+    });
+    choiceB.addEventListener('click', ()=>{
+      const q = QUESTIONS[state.index];
+      if (!q) return;
+      pick(q.b.letter);
+    });
+
+    window.addEventListener('keydown', (e)=>{
+      const isUndo = (e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'z');
+      if (isUndo){
+        e.preventDefault();
+        undo();
+      }
+    });
+
+    resetAll();
+  </script>
+</body>
+</html>
